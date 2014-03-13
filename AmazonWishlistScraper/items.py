@@ -11,6 +11,7 @@ class AmazonwishlistItem(Item):
     ASIN = Field()
     URL = Field()
     Title = Field()
+    Other_Data = Field()
     Cheapest = Field()
     Cheapest_Condition = Field()
     Prime_Price = Field()

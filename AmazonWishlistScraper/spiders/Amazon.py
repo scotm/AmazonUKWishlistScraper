@@ -64,6 +64,7 @@ class AmazonSpider(BaseSpider):
         item["ASIN"] = ASIN
         item["URL"] = "http://www.amazon.co.uk/dp/%s/?tag=eyeforfilm-21" % ASIN
         item["Title"] = remove_goop([x for x in hxs.xpath("//div[@id='olpProductDetails']//h1/text()").extract() if x.strip()][0])
+        item["Other_Data"] = remove_goop([x for x in hxs.xpath('//div[@id="olpProductByline"]/text()').extract() if x.strip()][0])
         item["Amazon_Price"] = response.meta.get('Amazon_Price', '')
 
         if prices:

@@ -25,4 +25,4 @@ FEED_EXPORTERS = {
     'csv': 'AmazonWishlistScraper.feed_exporter.CSVkwItemExporter'
 }
 
-EXPORT_FIELDS = ["Title", "URL", "Amazon_Price", "Cheapest", "Cheapest_Condition", "Cheapest_Cost_Ratio", "Prime_Price", "Prime_Condition", "Prime_Cost_Ratio"]
+EXPORT_FIELDS = ["Title", "Other_Data", "URL", "Amazon_Price", "Cheapest", "Cheapest_Condition", "Cheapest_Cost_Ratio", "Prime_Price", "Prime_Condition", "Prime_Cost_Ratio"]
