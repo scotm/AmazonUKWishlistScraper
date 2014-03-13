@@ -19,6 +19,7 @@ class AmazonSpider(BaseSpider):
     allowed_domains = ["amazon.co.uk"]
     visited_urls = set()
 
+
     def __init__(self, name=None, **kwargs):
         super(AmazonSpider, self).__init__(name, **kwargs)
         if 'initialpage' not in kwargs:
