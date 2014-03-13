@@ -11,7 +11,7 @@ ASIN_extractor = re.compile(r'.*\/dp\/([^\/]+)\/.*')
 getprice = re.compile('[^0-9\.]')
 strip_non_price = lambda x: re.sub(r'[^0-9\.]', r'', x)
 
-def remove_goop(text):
+def tidy_up_text(text):
     return " ".join(text.split())
 
 class AmazonSpider(BaseSpider):
@@ -64,8 +64,8 @@ class AmazonSpider(BaseSpider):
         item = AmazonwishlistItem()
         item["ASIN"] = ASIN
         item["URL"] = "http://www.amazon.co.uk/dp/%s/?tag=eyeforfilm-21" % ASIN
-        item["Title"] = remove_goop([x for x in hxs.xpath("//div[@id='olpProductDetails']//h1/text()").extract() if x.strip()][0])
-        item["Other_Data"] = remove_goop([x for x in hxs.xpath('//div[@id="olpProductByline"]/text()').extract() if x.strip()][0])
+        item["Title"] = tidy_up_text([x for x in hxs.xpath("//div[@id='olpProductDetails']//h1/text()").extract() if x.strip()][0])
+        item["Other_Data"] = tidy_up_text([x for x in hxs.xpath('//div[@id="olpProductByline"]/text()').extract() if x.strip()][0])
         item["Amazon_Price"] = response.meta.get('Amazon_Price', '')
 
         if prices:
@@ -74,14 +74,14 @@ class AmazonSpider(BaseSpider):
             cheapestshipping = prices[0].xpath('.//span[@class="olpShippingPrice"]/text()').extract()
             shipping = float(strip_non_price(cheapestshipping[0])) if cheapestshipping else 0.0
             item["Cheapest"] = basecost + shipping
-            item["Cheapest_Condition"] = remove_goop(prices[0].xpath('.//h3/text()').extract()[0])
+            item["Cheapest_Condition"] = tidy_up_text(prices[0].xpath('.//h3/text()').extract()[0])
             if "Cheapest" in item and "Amazon_Price" in item and item["Cheapest"] and item["Amazon_Price"]:
                 item["Cheapest_Cost_Ratio"] = round(float(item["Cheapest"]) / float(item["Amazon_Price"]), 3)
         free_shipping = [x for x in prices if x.xpath('.//span[@class="supersaver"]')]
         if free_shipping:
             free_shipping_price = free_shipping[0].xpath('.//span[@class="a-size-large a-color-price olpOfferPrice a-text-bold"]/text()').extract()[0]
             item["Prime_Price"] = strip_non_price(free_shipping_price)
-            item["Prime_Condition"] = remove_goop(free_shipping[0].xpath('.//h3/text()').extract()[0])
+            item["Prime_Condition"] = tidy_up_text(free_shipping[0].xpath('.//h3/text()').extract()[0])
             if "Prime_Price" in item and "Amazon_Price" in item and item["Prime_Price"] and item["Amazon_Price"]:
                 item["Prime_Cost_Ratio"] = round(float(item["Prime_Price"]) / float(item["Amazon_Price"]),3)
             yield item
