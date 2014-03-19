@@ -10,6 +10,7 @@ from AmazonWishlistScraper.items import AmazonwishlistItem
 ASIN_extractor = re.compile(r'.*\/dp\/([^\/]+)\/.*')
 getprice = re.compile('[^0-9\.]')
 strip_non_price = lambda x: re.sub(r'[^0-9\.]', r'', x)
+poo = re.compile("^(by|~) ")
 
 def tidy_up_text(text):
     return " ".join(text.split())
@@ -66,6 +67,7 @@ class AmazonSpider(BaseSpider):
         item["URL"] = "http://www.amazon.co.uk/dp/%s/?tag=eyeforfilm-21" % ASIN
         item["Title"] = tidy_up_text([x for x in hxs.xpath("//div[@id='olpProductDetails']//h1/text()").extract() if x.strip()][0])
         item["Other_Data"] = tidy_up_text([x for x in hxs.xpath('//div[@id="olpProductByline"]/text()').extract() if x.strip()][0])
+        item["Other_Data"] = poo.sub(r'',item["Other_Data"])
         item["Amazon_Price"] = response.meta.get('Amazon_Price', '')
 
         if prices:
