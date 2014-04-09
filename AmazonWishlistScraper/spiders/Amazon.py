@@ -7,7 +7,7 @@ from scrapy.http.request import Request
 
 from AmazonWishlistScraper.items import AmazonwishlistItem
 
-ASIN_extractor = re.compile(r'.*\/dp\/([^\/]+)\/.*')
+ASIN_extractor = re.compile(r'.*/dp/([^/]+)/.*')
 getprice = re.compile('[^0-9\.]')
 strip_non_price = lambda x: re.sub(r'[^0-9\.]', r'', x)
 poo = re.compile("^(by|~) ")
