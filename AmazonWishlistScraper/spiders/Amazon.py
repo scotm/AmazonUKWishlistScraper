@@ -57,6 +57,22 @@ class AmazonSpider(Spider):
                 if amazonprice:
                     request.meta["Amazon_Price"] = float(getprice.sub(r'', amazonprice[0]))
                 yield request
+            main_table = hxs.xpath('//table[@class="a-bordered a-horizontal-stripes  g-compact-items"]')
+            if main_table:
+                rows = hxs.xpath('.//tr[td/@class = "g-title"]')[1:]
+                for row in rows:
+                    URL = row.xpath('./td[@class="g-title"]/a/@href')[0].extract()
+                    ASIN = ASIN_extractor.sub(r'\1',URL)
+                    request = Request('http://www.amazon.co.uk/gp/offer-listing/%s/' % ASIN, callback=self.parse_offers)
+                    request.meta['ASIN'] = ASIN
+                    amazonprice = row.xpath('./td[@class="g-price"]/span/text()')[0].extract().replace(u'\xa3','').strip()
+                    if amazonprice:
+                        try:
+                            request.meta["Amazon_Price"] = float(getprice.sub(r'', amazonprice[0]))
+                        except:
+                            print "ERROR %s - %s" % (amazonprice, str(request))
+                    yield request
+
 
     def parse_offers(self, response):
         hxs = Selector(response)
