@@ -1,7 +1,7 @@
 import re
 from urlparse import urlsplit, urlunsplit
 
-from scrapy.spider import BaseSpider
+from scrapy.spider import Spider
 from scrapy.selector import Selector
 from scrapy.http.request import Request
 
@@ -15,7 +15,7 @@ poo = re.compile("^(by|~) ")
 def tidy_up_text(text):
     return " ".join(text.split())
 
-class AmazonSpider(BaseSpider):
+class AmazonSpider(Spider):
     name = "Amazon"
     allowed_domains = ["amazon.co.uk"]
     visited_urls = set()
