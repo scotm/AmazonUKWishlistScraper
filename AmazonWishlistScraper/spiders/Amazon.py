@@ -68,6 +68,7 @@ class AmazonSpider(BaseSpider):
         item["Title"] = tidy_up_text([x for x in hxs.xpath("//div[@id='olpProductDetails']//h1/text()").extract() if x.strip()][0])
         item["Other_Data"] = tidy_up_text([x for x in hxs.xpath('//div[@id="olpProductByline"]/text()').extract() if x.strip()][0])
         item["Other_Data"] = poo.sub(r'',item["Other_Data"])
+        item["Type"] = hxs.xpath("//select[@id='searchDropdownBox']/option[@selected='selected']/text()").extract()[0]
         item["Amazon_Price"] = response.meta.get('Amazon_Price', '')
 
         if prices:
