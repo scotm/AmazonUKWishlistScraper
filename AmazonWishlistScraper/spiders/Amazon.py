@@ -36,8 +36,11 @@ class AmazonSpider(Spider):
     def parse(self, response):
         hxs = Selector(response)
         if response.url in self.start_urls:
-            pages = [int(re.sub('.*&page=([0-9]+).*', r'\1', x)) for x in
-                     hxs.xpath('//div[@class="pagDiv"]//a/@href').extract()]
+            pages = [re.sub('.*&page=([0-9]+).*', r'\1', x) for x in
+                     hxs.xpath('//div[@class="pagDiv"]//a/@href').extract() +
+                     hxs.xpath('//div[@id="wishlistPagination"]').xpath('.//a').extract() +
+                     hxs.xpath('//ul[@class="a-pagination"]//li/a/@href').extract()]
+            pages = [int(x) for x in pages if x[0] in '0123456789']
             numpages = max(pages) if pages else False
             if numpages:
                 for i in range(2, numpages + 1):
