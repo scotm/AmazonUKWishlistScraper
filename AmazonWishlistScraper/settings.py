@@ -15,7 +15,7 @@ NEWSPIDER_MODULE = 'AmazonWishlistScraper.spiders'
 USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/30.0.1566.2 Safari/537.36'
 
 HTTPCACHE_ENABLED = True
-HTTPCACHE_EXPIRATION_SECS = 600
+HTTPCACHE_EXPIRATION_SECS = 3600
 #LOG_FILE = 'logging.txt'
 
 USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:12.0) Gecko/20100101 Firefox/12.0'

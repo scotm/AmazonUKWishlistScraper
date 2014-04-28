@@ -20,6 +20,7 @@ class AmazonwishlistItem(Item):
     Amazon_Price = Field()
     Cheapest_Cost_Ratio = Field()
     Prime_Cost_Ratio = Field()
+    Original_URL = Field()
 
 class AmazonWishlistEntry(Item):
     WishListID = Field()
