@@ -29,8 +29,9 @@ class AmazonSpider(Spider):
         # Prime the spider with a wishlist - mine, or one that's supplied with command line arguments
         if 'initialpage' not in kwargs:
             self.start_urls = (
-                'http://www.amazon.co.uk/registry/wishlist/2ZOJN0LT8HT1F'
-                '?filter=all&reveal=unpurchased&layout=compact&sort=date-added',
+                'http://www.amazon.co.uk/gp/registry/wishlist/ref=nav_gno_listpop_wi?filter=all'
+                '&sort=date-added&reveal=unpurchased&view=null&id=2ZOJN0LT8HT1F'
+                '&type=wishlist&itemPerPage=50&layout=compact',
             )
         else:
             p = urlsplit(kwargs['initialpage'])
@@ -40,6 +41,18 @@ class AmazonSpider(Spider):
                             '']),
             )
 
+    def make_amazon_request(self, response, asin, amazonprice=None):
+        request = Request('http://www.amazon.co.uk/gp/offer-listing/%s/' % asin, callback=self.parse_offers)
+        request.meta['ASIN'] = asin
+        request.meta['Original_URL'] = response.url
+        if amazonprice:
+            try:
+                request.meta["Amazon_Price"] = float(getprice.sub(r'', amazonprice))
+            except:
+                print "ERROR %s - %s" % (amazonprice, str(request))
+        return request
+
+
     def parse(self, response):
         sel = Selector(response)
 
@@ -48,9 +61,9 @@ class AmazonSpider(Spider):
         # Only grab the other page URLs on the first response.
         if response.url in self.start_urls:
             # Overly complex, but Amazon keeps changing the HTML layout code
-            pages = [re.sub('.*&page=([0-9]+).*', r'\1', x) for x in
+            pages = [re.sub('.*(&amp;|&)page=([0-9]+).*', r'\1', x) for x in
                      sel.xpath('//div[@class="pagDiv"]//a/@href').extract() +
-                     sel.xpath('//div[@id="wishlistPagination"]').xpath('.//a').extract() +
+                     sel.xpath('//div[@id="wishlistPagination"]//a/text()').extract() +
                      sel.xpath('//ul[@class="a-pagination"]//li/a/@href').extract()]
             pages = [int(x) for x in pages if x[0] in '0123456789']
             numpages = max(pages) if pages else False
@@ -64,16 +77,10 @@ class AmazonSpider(Spider):
 
             # Skip the first row - it's just header information
             for i in sel.xpath('//tbody[@class="itemWrapper"]'):
-
                 # Build the offer-page request: the ASIN is the key
                 asin = i.xpath('./@name')[0].extract().split('.')[-1]
-                request = Request('http://www.amazon.co.uk/gp/offer-listing/%s/' % asin, callback=self.parse_offers)
-                request.meta['ASIN'] = asin
-                request.meta['Original_URL'] = response.url
                 amazonprice = i.xpath('.//span[@class="price"]/strong/text()').extract()
-                if amazonprice:
-                    request.meta["Amazon_Price"] = float(getprice.sub(r'', amazonprice[0]))
-                yield request
+                yield self.make_amazon_request(response,asin, amazonprice)
 
             # Does the same thing as above, again, HTML page layout code means changes
             main_table = sel.xpath('//table[@class="a-bordered a-horizontal-stripes  g-compact-items"]')
@@ -81,17 +88,16 @@ class AmazonSpider(Spider):
                 rows = sel.xpath('.//tr[td/@class = "g-title"]')[1:]
                 for row in rows:
                     asin = ASIN_extractor.sub(r'\1', row.xpath('./td[@class="g-title"]/a/@href')[0].extract())
-                    request = Request('http://www.amazon.co.uk/gp/offer-listing/%s/' % asin, callback=self.parse_offers)
-                    request.meta['ASIN'] = asin
-                    request.meta['Original_URL'] = response.url
-                    amazonprice = row.xpath('./td[@class="g-price"]/span/text()')[0].extract().replace(u'\xa3',
-                                                                                                       '').strip()
-                    if amazonprice:
-                        try:
-                            request.meta["Amazon_Price"] = float(getprice.sub(r'', amazonprice))
-                        except:
-                            print "ERROR %s - %s" % (amazonprice, str(request))
-                    yield request
+                    amazonprice = row.xpath('./td[contains(@class,"g-price")]/span/text()')[0].extract().replace(
+                        u'\xa3', '').strip()
+                    yield self.make_amazon_request(response,asin, amazonprice)
+            else:
+                main_table = sel.xpath('//div[contains(@id,"itemInfo_")]')
+                for row in main_table:
+                    asin = ASIN_extractor.sub(r'\1', row.xpath('.//a/@href')[0].extract())
+                    amazonprice = row.xpath('.//span[contains(@id,"itemPrice_")]/text()')[0].extract().replace(u'\xa3', '').strip()
+                    yield self.make_amazon_request(response,asin, amazonprice)
+
 
     def parse_offers(self, response):
         sel = Selector(response)
@@ -142,7 +148,7 @@ class AmazonSpider(Spider):
 
     @staticmethod
     def parse_freeshipping(response):
-        #FIXME: Markup changes are mostly ignored - needs repaired.
+        # FIXME: Markup changes are mostly ignored - needs repaired.
         log.msg("Free shipping tested - %s" % response.url, level=log.DEBUG)
         sel = Selector(response)
         item = response.meta["Item"]
@@ -156,9 +162,11 @@ class AmazonSpider(Spider):
         else:
             free_shipping = sel.xpath('//div[contains(@class,"a-row a-spacing-mini olpOffer")]')
             if free_shipping:
-                free_shipping_price = free_shipping[0].xpath('./div/span[contains(@class,"olpOfferPrice")]/text()').extract()[0]
+                free_shipping_price = \
+                    free_shipping[0].xpath('./div/span[contains(@class,"olpOfferPrice")]/text()').extract()[0]
                 item["Prime_Price"] = strip_non_price(free_shipping_price)
-                item["Prime_Condition"] = free_shipping[0].xpath('./div/h3[contains(@class,"olpCondition")]/text()').extract()[0].strip()
+                item["Prime_Condition"] = \
+                    free_shipping[0].xpath('./div/h3[contains(@class,"olpCondition")]/text()').extract()[0].strip()
         yield item
 
 

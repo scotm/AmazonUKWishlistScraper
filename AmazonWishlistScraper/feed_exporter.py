@@ -30,6 +30,12 @@ class CSVkwItemExporter(CsvItemExporter):
         self.list_of_items.append(values)
 
     def finish_exporting(self):
+        def cast_float(data):
+            try:
+                return float(data)
+            except ValueError:
+                return 100000000000000.0
+        self.list_of_items.sort(key=lambda x:cast_float(x[self.fields_to_export.index('Prime_Price')]))
         self.list_of_items.sort(key=lambda x:x[self.fields_to_export.index('Cheapest')])
         for values in self.list_of_items:
             self.csv_writer.writerow(values)

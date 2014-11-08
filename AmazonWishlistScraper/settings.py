@@ -16,9 +16,12 @@ USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Ge
 
 HTTPCACHE_ENABLED = True
 HTTPCACHE_EXPIRATION_SECS = 3600
+HTTPCACHE_STORAGE = 'scrapy.contrib.httpcache.DbmCacheStorage'
+HTTPCACHE_IGNORE_HTTP_CODES = [500,503]
 #LOG_FILE = 'logging.txt'
 
 USER_AGENT = 'Mozilla/5.0 (X11; Ubuntu; Linux x86_64; rv:12.0) Gecko/20100101 Firefox/12.0'
+USER_AGENT = 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/34.0.1847.132 Safari/537.36'
 
 FEED_EXPORTERS = {
     'csv': 'AmazonWishlistScraper.feed_exporter.CSVkwItemExporter'
