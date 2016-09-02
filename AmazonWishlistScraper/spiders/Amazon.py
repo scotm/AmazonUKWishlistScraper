@@ -1,8 +1,8 @@
 import re
 from urlparse import urlsplit, urlunsplit
 
-from scrapy import log
-from scrapy.spider import Spider
+import logging
+from scrapy.spiders import Spider
 from scrapy.selector import Selector
 from scrapy.http.request import Request
 
@@ -10,8 +10,11 @@ from AmazonWishlistScraper.items import AmazonwishlistItem
 
 ASIN_extractor = re.compile(r'.*/dp/([^/]+)/.*')
 getprice = re.compile('[^0-9\.]')
-strip_non_price = lambda x: re.sub(r'[^0-9\.]', r'', x)
 extraneous_other_data = re.compile("^(by|~) ")
+
+
+def strip_non_price(x):
+    return re.sub(r'[^0-9\.]', r'', x)
 
 
 def tidy_up_text(text):
@@ -29,7 +32,7 @@ class AmazonSpider(Spider):
         # Prime the spider with a wishlist - mine, or one that's supplied with command line arguments
         if 'initialpage' not in kwargs:
             self.start_urls = (
-                'http://www.amazon.co.uk/gp/registry/wishlist/ref=nav_gno_listpop_wi?filter=all'
+                'https://www.amazon.co.uk/gp/registry/wishlist/ref=nav_gno_listpop_wi?filter=all'
                 '&sort=date-added&reveal=unpurchased&view=null&id=2ZOJN0LT8HT1F'
                 '&type=wishlist&itemPerPage=50&layout=compact',
             )
@@ -42,7 +45,7 @@ class AmazonSpider(Spider):
             )
 
     def make_amazon_request(self, response, asin, amazonprice=None):
-        request = Request('http://www.amazon.co.uk/gp/offer-listing/%s/' % asin, callback=self.parse_offers)
+        request = Request('https://www.amazon.co.uk/gp/offer-listing/%s/' % asin, callback=self.parse_offers)
         request.meta['ASIN'] = asin
         request.meta['Original_URL'] = response.url
         if amazonprice:
@@ -94,7 +97,10 @@ class AmazonSpider(Spider):
             else:
                 main_table = sel.xpath('//div[contains(@id,"itemInfo_")]')
                 for row in main_table:
-                    asin = ASIN_extractor.sub(r'\1', row.xpath('.//a/@href')[0].extract())
+                    ref = row.xpath('.//a/@href')
+                    if not ref:
+                        continue
+                    asin = ASIN_extractor.sub(r'\1', ref[0].extract())
                     amazonprice = row.xpath('.//span[contains(@id,"itemPrice_")]/text()')[0].extract().replace(u'\xa3', '').strip()
                     yield self.make_amazon_request(response,asin, amazonprice)
 
@@ -106,7 +112,7 @@ class AmazonSpider(Spider):
         # Build the item
         item = AmazonwishlistItem()
         item["ASIN"] = asin
-        item["URL"] = "http://www.amazon.co.uk/dp/%s/?tag=eyeforfilm-21" % asin
+        item["URL"] = "https://www.amazon.co.uk/dp/%s/?tag=eyeforfilm-21" % asin
         item["Title"] = tidy_up_text(
             [x for x in sel.xpath("//div[@id='olpProductDetails']//h1/text()").extract() if x.strip()][0])
         item["Other_Data"] = tidy_up_text(
@@ -141,7 +147,7 @@ class AmazonSpider(Spider):
             yield item
         else:
             # If there are no free shipping offers on this page, create a second request to make sure.
-            request = Request('http://www.amazon.co.uk/gp/offer-listing/%s/ref=olp_prime_all?shipPromoFilter=1' % asin,
+            request = Request('https://www.amazon.co.uk/gp/offer-listing/%s/ref=olp_prime_all?shipPromoFilter=1' % asin,
                               callback=self.parse_freeshipping)
             request.meta["Item"] = item
             yield request
@@ -149,7 +155,7 @@ class AmazonSpider(Spider):
     @staticmethod
     def parse_freeshipping(response):
         # FIXME: Markup changes are mostly ignored - needs repaired.
-        log.msg("Free shipping tested - %s" % response.url, level=log.DEBUG)
+        logging.log(logging.DEBUG, "Free shipping tested - %s" % response.url)
         sel = Selector(response)
         item = response.meta["Item"]
         row_xpath = '//div[@id="bucketnew"]/div/table[2]/tbody[@class="result"]/tr'
@@ -166,7 +172,5 @@ class AmazonSpider(Spider):
                     free_shipping[0].xpath('./div/span[contains(@class,"olpOfferPrice")]/text()').extract()[0]
                 item["Prime_Price"] = strip_non_price(free_shipping_price)
                 item["Prime_Condition"] = \
-                    free_shipping[0].xpath('./div/h3[contains(@class,"olpCondition")]/text()').extract()[0].strip()
+                    free_shipping[0].xpath('.//span[contains(@class,"olpCondition")]/text()').extract()[0].strip()
         yield item
-
-
