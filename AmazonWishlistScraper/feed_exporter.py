@@ -9,6 +9,7 @@ CSV writer, resulting in EXPORT_FIELDS and EXPORT_ENCODING being ignored
 from scrapy.conf import settings
 from scrapy.contrib.exporter import CsvItemExporter
 import csv
+import logging
 
 class CSVkwItemExporter(CsvItemExporter):
 
@@ -38,4 +39,8 @@ class CSVkwItemExporter(CsvItemExporter):
         self.list_of_items.sort(key=lambda x:cast_float(x[self.fields_to_export.index('Prime_Price')]))
         self.list_of_items.sort(key=lambda x:x[self.fields_to_export.index('Cheapest')])
         for values in self.list_of_items:
-            self.csv_writer.writerow(values)
+            try:
+                self.csv_writer.writerow(values)
+            except:
+                logging.log(logging.DEBUG, str(values))
+                pass

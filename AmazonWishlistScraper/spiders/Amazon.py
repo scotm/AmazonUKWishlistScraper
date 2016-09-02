@@ -12,14 +12,11 @@ ASIN_extractor = re.compile(r'.*/dp/([^/]+)/.*')
 getprice = re.compile('[^0-9\.]')
 extraneous_other_data = re.compile("^(by|~) ")
 
-
 def strip_non_price(x):
     return re.sub(r'[^0-9\.]', r'', x)
 
-
 def tidy_up_text(text):
     return " ".join(text.split())
-
 
 class AmazonSpider(Spider):
     name = "Amazon"
@@ -163,8 +160,8 @@ class AmazonSpider(Spider):
         if free_shipping:
             free_shipping_price = free_shipping[0].xpath('.//span[@class="price"]/text()').extract()[0]
             item["Prime_Price"] = strip_non_price(free_shipping_price)
-            item["Prime_Condition"] = free_shipping[0].xpath('.//div[@class="condition"]/text()').extract()[
-                0].strip().replace('\n', '')
+            item["Prime_Condition"] = tidy_up_text(free_shipping[0].xpath('.//div[@class="condition"]/text()').extract()[
+                0].strip().replace('\n', ''))
         else:
             free_shipping = sel.xpath('//div[contains(@class,"a-row a-spacing-mini olpOffer")]')
             if free_shipping:
@@ -172,5 +169,5 @@ class AmazonSpider(Spider):
                     free_shipping[0].xpath('./div/span[contains(@class,"olpOfferPrice")]/text()').extract()[0]
                 item["Prime_Price"] = strip_non_price(free_shipping_price)
                 item["Prime_Condition"] = \
-                    free_shipping[0].xpath('.//span[contains(@class,"olpCondition")]/text()').extract()[0].strip()
+                    tidy_up_text(free_shipping[0].xpath('.//span[contains(@class,"olpCondition")]/text()').extract()[0].strip())
         yield item
